@@ -1,0 +1,39 @@
+:root {
+  --primary-color: #00b96b;
+  --dark-bg: #1a1a1a;
+  --dark-secondary: #242424;
+  --text-light: #ffffff;
+  --text-gray: #909399;
+}
+
+body {
+  margin: 0;
+  background: var(--dark-bg);
+  color: var(--text-light);
+}
+
+.app-container {
+  min-height: 100vh;
+  display: flex;
+}
+
+// Element Plus 暗色主题覆盖
+.el-menu {
+  background-color: var(--dark-secondary) !important;
+  border-right: none !important;
+}
+
+.el-menu-item {
+  &:hover {
+    background-color: var(--primary-color) !important;
+  }
+  &.is-active {
+    background-color: var(--primary-color) !important;
+    color: var(--text-light) !important;
+  }
+}
+
+.el-button--primary {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+} 

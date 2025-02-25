@@ -1,0 +1,66 @@
+// 移动端断点
+$breakpoints: (
+  'phone': 480px,
+  'tablet': 768px,
+  'desktop': 1024px
+);
+
+@mixin respond-to($breakpoint) {
+  @if map-has-key($breakpoints, $breakpoint) {
+    @media (max-width: map-get($breakpoints, $breakpoint)) {
+      @content;
+    }
+  }
+}
+
+// 移动端样式适配
+.app-layout {
+  @include respond-to('tablet') {
+    .main-container {
+      flex-direction: column;
+    }
+    
+    .el-aside {
+      width: 100% !important;
+      .el-menu {
+        display: flex;
+        justify-content: space-around;
+      }
+    }
+  }
+}
+
+.textbook-container {
+  @include respond-to('tablet') {
+    .el-col {
+      width: 50%;
+    }
+  }
+  
+  @include respond-to('phone') {
+    .el-col {
+      width: 100%;
+    }
+  }
+}
+
+.order-container {
+  @include respond-to('tablet') {
+    .el-table {
+      font-size: 14px;
+      
+      th, td {
+        padding: 8px;
+      }
+    }
+  }
+}
+
+.login-container {
+  @include respond-to('phone') {
+    .login-card {
+      width: 90%;
+      margin: 0 20px;
+    }
+  }
+} 

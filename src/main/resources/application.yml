@@ -1,0 +1,61 @@
+server:
+  port: 8080
+
+spring:
+  main:
+    allow-circular-references: true
+    allow-bean-definition-overriding: true  # 允许 Bean 覆盖
+  datasource:
+    url: jdbc:mysql://localhost:3306/bys?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        format_sql: true
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+  mvc:
+    # 移除这些配置，使用 SecurityConfig 中的配置
+    # allowed-origins: "*"
+    # allowed-methods: "*"
+    # allowed-headers: "*"
+    # allow-credentials: true
+    # max-age: 3600
+
+logging:
+  level:
+    root: INFO
+    org.hibernate: WARN
+    org.springframework: WARN
+    com.example.demo: INFO
+    com.example: DEBUG
+    org.hibernate.SQL: ERROR
+    org.hibernate.type: ERROR
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+app:
+  jwt:
+    # 使用一个固定的、安全的密钥（这是一个示例，实际使用时应该更换为你自己的密钥）
+    secret: "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
+    expiration: 86400000  # 24 hours in milliseconds
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+admin:
+  secret-key: "admin123"  # 确保这个值和前端输入匹配 

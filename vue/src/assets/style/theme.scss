@@ -1,0 +1,32 @@
+// 主题过渡动画
+:root {
+  --transition-duration: 0.3s;
+  
+  --primary-color: #00b96b;
+  --dark-bg: #1a1a1a;
+  --dark-secondary: #242424;
+  --text-light: #ffffff;
+  --text-gray: #909399;
+  
+  transition: 
+    --primary-color var(--transition-duration),
+    --dark-bg var(--transition-duration),
+    --dark-secondary var(--transition-duration),
+    --text-light var(--transition-duration),
+    --text-gray var(--transition-duration);
+}
+
+// 主题相关的组件样式
+.el-button {
+  transition: 
+    background-color var(--transition-duration),
+    border-color var(--transition-duration),
+    color var(--transition-duration);
+}
+
+.el-card,
+.el-dialog,
+.el-dropdown-menu,
+.el-message {
+  transition: background-color var(--transition-duration);
+} 
