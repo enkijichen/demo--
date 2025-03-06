@@ -1,10 +1,10 @@
 -- 初始化管理员账号 (密码: admin123)
 INSERT INTO user (username, password, email, phone, role)
-VALUES ('admin123', '$2a$10$3jGlxTEHD4j3/uYRYXqOz.4REL4cO.GBpGRijDcvzZGI0F3FX5VXi', 'admin@example.com', '13800000000', 'ADMIN');
+VALUES ('admin1234', '$2a$10$3jGlxTEHD4j3/uYRYXqOz.4REL4cO.GBpGRijDcvzZGI0F3FX5VXi', 'admin@example.com', '13800000000', 'ADMIN');
 
 -- 初始化测试用户账号 (密码: aka123)
 INSERT INTO user (username, password, email, phone, role)
-VALUES ('aka123', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', 'user@example.com', '13900000000', 'USER');
+VALUES ('aka1234', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', 'user@example.com', '13900000000', 'USER');
 
 -- 初始化教材数据
 INSERT INTO textbook (name, grade, subject, price, stock) VALUES 
