@@ -2,7 +2,7 @@
   <div class="manage-container">
     <div class="manage-header">
       <h2>教材管理</h2>
-      <el-button type="primary" @click="handleAdd">添加教材</el-button>
+      <el-button type="primary" @click="handleAdd" :icon="Plus">添加教材</el-button>
     </div>
 
     <div class="table-container">
@@ -16,6 +16,29 @@
           </template>
         </el-table-column>
         <el-table-column prop="stock" label="库存" width="150" align="center" />
+        <el-table-column label="图片" width="150">
+          <template #default="{ row }">
+            <el-image
+              v-if="row.imageUrl"
+              :src="row.imageUrl"
+              style="width: 50px; height: 50px"
+              :preview-src-list="[row.imageUrl]"
+            />
+            <el-upload
+              :show-file-list="false"
+              :before-upload="(file) => {
+                if (beforeImageUpload(file)) {
+                  handleImageUpload(file, row)
+                }
+                return false
+              }"
+            >
+              <el-button type="primary" :icon="Upload" size="small">
+                {{ row.imageUrl ? '更新图片' : '上传图片' }}
+              </el-button>
+            </el-upload>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="200" align="center" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
@@ -84,8 +107,9 @@
 import { ref, onMounted, defineComponent } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance } from 'element-plus'
-import { getTextbooks, createTextbook, updateTextbook, deleteTextbook } from '@/api'
+import { getTextbooks, createTextbook, updateTextbook, deleteTextbook, uploadTextbookImage } from '@/api'
 import type { Textbook } from '@/types'
+import { Plus, Delete, Edit, Upload } from '@element-plus/icons-vue'
 
 defineComponent({
   name: 'TextbookManage'
@@ -195,6 +219,36 @@ const handleSubmit = async () => {
       }
     }
   })
+}
+
+const handleImageUpload = async (file: File, textbook: Textbook) => {
+  try {
+    const { data: response } = await uploadTextbookImage(textbook.id, file)
+    if (response.success) {
+      ElMessage.success('图片上传成功')
+      await fetchTextbooks() // 刷新列表以显示新图片
+    } else {
+      ElMessage.error(response.message || '图片上传失败')
+    }
+  } catch (error: any) {
+    console.error('图片上传出错:', error)
+    ElMessage.error(error.response?.data?.message || '图片上传失败')
+  }
+}
+
+const beforeImageUpload = (file: File) => {
+  const isImage = file.type.startsWith('image/')
+  const isLt2M = file.size / 1024 / 1024 < 2
+
+  if (!isImage) {
+    ElMessage.error('只能上传图片文件!')
+    return false
+  }
+  if (!isLt2M) {
+    ElMessage.error('图片大小不能超过 2MB!')
+    return false
+  }
+  return true
 }
 
 onMounted(() => {

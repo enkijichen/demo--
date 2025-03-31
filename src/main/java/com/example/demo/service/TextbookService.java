@@ -11,12 +11,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
 @Transactional
+@Slf4j
 public class TextbookService {
     @Autowired
     private TextbookRepository textbookRepository;
@@ -97,18 +99,21 @@ public class TextbookService {
     }
 
     public List<Textbook> getTextbooks(String name, String grade, String subject) {
-        if (name != null && !name.isEmpty()) {
-            return textbookRepository.findByNameContaining(name);
-        }
-        if (grade != null && !grade.isEmpty() && subject != null && !subject.isEmpty()) {
-            return textbookRepository.findByGradeAndSubject(grade, subject);
-        }
-        if (grade != null && !grade.isEmpty()) {
-            return textbookRepository.findByGrade(grade);
-        }
-        if (subject != null && !subject.isEmpty()) {
-            return textbookRepository.findBySubject(subject);
+        if (name != null || grade != null || subject != null) {
+            return textbookRepository.findByNameContainingOrGradeOrSubject(
+                name != null ? name : "",
+                grade != null ? grade : "",
+                subject != null ? subject : ""
+            );
         }
         return textbookRepository.findAll();
+    }
+
+    public Optional<Textbook> getTextbookById(Long id) {
+        return textbookRepository.findById(id);
+    }
+
+    public Textbook saveTextbook(Textbook textbook) {
+        return textbookRepository.save(textbook);
     }
 } 

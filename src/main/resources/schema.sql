@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS textbook (
     grade VARCHAR(20) NOT NULL,
     subject VARCHAR(20) NOT NULL,
     price DECIMAL(10,2) NOT NULL,
-    stock INT NOT NULL
+    stock INT NOT NULL,
+    image_url VARCHAR(255)
 );
 
 -- 创建订单表
@@ -33,9 +34,10 @@ CREATE TABLE IF NOT EXISTS orders (
     receiver VARCHAR(50) NOT NULL COMMENT '收货人姓名',
     phone VARCHAR(20) NOT NULL COMMENT '联系电话',
     address VARCHAR(255) NOT NULL COMMENT '收货地址',
-    status VARCHAR(20) NOT NULL COMMENT '订单状态：PENDING-待审核,SHIPPED-已发货,RECEIVED-已收货,REJECTED-已拒绝,CANCELLED-已撤回',
+    status VARCHAR(20) NOT NULL COMMENT '订单状态：UNPAID-待支付,PAID-已支付,PENDING-待处理,SHIPPED-已发货,RECEIVED-已收货,REJECTED-已拒绝,CANCELLED-已撤回',
     create_time DATETIME NOT NULL COMMENT '创建时间',
     update_time DATETIME NULL COMMENT '更新时间',
+    payment_time DATETIME NULL COMMENT '支付时间',
     FOREIGN KEY (user_id) REFERENCES user(id),
     FOREIGN KEY (textbook_id) REFERENCES textbook(id)
 );

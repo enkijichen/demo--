@@ -14,6 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import lombok.extern.slf4j.Slf4j;
 import jakarta.validation.Valid;
+import com.example.demo.service.FileStorageService;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
 
@@ -26,6 +29,9 @@ import java.util.List;
 public class TextbookController {
     @Autowired
     private TextbookService textbookService;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     @Operation(summary = "获取所有教材")
     @GetMapping
@@ -92,6 +98,29 @@ public class TextbookController {
             log.error("Failed to delete textbook", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("删除教材失败"));
+        }
+    }
+
+    @PostMapping("/{id}/image")
+    public ResponseEntity<ApiResponse<Textbook>> uploadImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        try {
+            return textbookService.getTextbookById(id)
+                    .map(textbook -> {
+                        String fileName = fileStorageService.storeFile(file);
+                        String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
+                                .path("/api/files/")
+                                .path(fileName)
+                                .toUriString();
+                        textbook.setImageUrl(fileDownloadUri);
+                        Textbook savedTextbook = textbookService.saveTextbook(textbook);
+                        return ResponseEntity.ok(ApiResponse.success(savedTextbook, "图片上传成功"));
+                    })
+                    .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body(ApiResponse.error("教材不存在")));
+        } catch (Exception e) {
+            log.error("Failed to upload image for textbook: " + id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("图片上传失败"));
         }
     }
 } 

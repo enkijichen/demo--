@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -47,7 +48,7 @@ public class OrderService {
             order.setReceiver(request.getReceiver());
             order.setPhone(request.getPhone());
             order.setAddress(request.getAddress());
-            order.setStatus(OrderStatus.PENDING);
+            order.setStatus(OrderStatus.UNPAID);
             
             // 减少库存
             textbook.setStock(textbook.getStock() - request.getQuantity());
@@ -62,6 +63,34 @@ public class OrderService {
         } catch (Exception e) {
             log.error("Failed to create order", e);
             throw new BusinessException("创建订单失败");
+        }
+    }
+
+    @Transactional
+    public Order payOrder(Long orderId) {
+        try {
+            log.info("Processing payment for order: {}", orderId);
+            
+            Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new BusinessException("订单不存在"));
+                
+            if (order.getStatus() != OrderStatus.UNPAID) {
+                throw new BusinessException("订单状态不正确");
+            }
+            
+            // 更新订单状态
+            order.setStatus(OrderStatus.PAID);
+            order.setPaymentTime(LocalDateTime.now());
+            
+            Order savedOrder = orderRepository.save(order);
+            log.info("Payment processed successfully for order: {}", savedOrder.getId());
+            return savedOrder;
+            
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to process payment", e);
+            throw new BusinessException("支付失败");
         }
     }
 
@@ -95,23 +124,19 @@ public class OrderService {
             
             log.info("Current status: {}, New status: {}", currentStatus, newStatus);
             
-            // 检查状态转换是否合法
-            if (currentStatus != OrderStatus.PENDING && 
-                !(currentStatus == OrderStatus.SHIPPED && newStatus == OrderStatus.RECEIVED)) {
-                throw new BusinessException("当前订单状态不可修改");
+            // 使用新的状态转换验证逻辑
+            if (!currentStatus.canTransitionTo(newStatus)) {
+                throw new BusinessException(String.format("订单状态无法从%s变更为%s", 
+                    currentStatus.getDescription(), 
+                    newStatus.getDescription()));
             }
             
             // 更新订单状态
             order.setStatus(newStatus);
             
-            // 处理库存
-            Textbook textbook = order.getTextbook();
-            
-            // 如果是取消订单，恢复库存
-            if (newStatus == OrderStatus.CANCELLED && currentStatus == OrderStatus.PENDING) {
-                log.info("Restoring stock for cancelled order: quantity={}", order.getQuantity());
-                textbook.setStock(textbook.getStock() + order.getQuantity());
-                textbookRepository.save(textbook);
+            // 如果是支付状态，记录支付时间
+            if (newStatus == OrderStatus.PAID) {
+                order.setPaymentTime(LocalDateTime.now());
             }
             
             Order updatedOrder = orderRepository.save(order);
@@ -125,5 +150,9 @@ public class OrderService {
             log.error("Unexpected error updating order status", e);
             throw new BusinessException("更新订单状态失败");
         }
+    }
+
+    public List<Order> findAllOrders() {
+        return orderRepository.findAllByOrderByCreateTimeDesc();
     }
 } 

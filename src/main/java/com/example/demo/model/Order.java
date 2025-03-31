@@ -53,6 +53,9 @@ public class Order {
     @Column(name = "update_time", nullable = false)
     private LocalDateTime updateTime;
     
+    @Column(name = "payment_time")
+    private LocalDateTime paymentTime;
+    
     @PrePersist
     protected void onCreate() {
         createTime = LocalDateTime.now();

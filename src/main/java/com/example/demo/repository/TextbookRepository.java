@@ -11,4 +11,5 @@ public interface TextbookRepository extends JpaRepository<Textbook, Long> {
     List<Textbook> findBySubject(String subject);
     List<Textbook> findByGradeAndSubject(String grade, String subject);
     List<Textbook> findByNameContaining(String name);
+    List<Textbook> findByNameContainingOrGradeOrSubject(String name, String grade, String subject);
 } 

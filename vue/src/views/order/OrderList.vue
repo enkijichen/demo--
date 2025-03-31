@@ -49,12 +49,20 @@
         <el-table-column label="操作" width="200">
           <template #default="{ row }">
             <el-button
-              v-if="row.status === 'PENDING'"
+              v-if="row.status === 'UNPAID'"
+              type="primary"
+              size="small"
+              @click="handlePay(row)"
+            >
+              去支付
+            </el-button>
+            <el-button
+              v-if="row.status === 'UNPAID'"
               type="warning"
               size="small"
               @click="handleCancel(row)"
             >
-              撤回订单
+              取消订单
             </el-button>
             <el-button
               v-if="row.status === 'SHIPPED'"
@@ -64,18 +72,37 @@
             >
               确认收货
             </el-button>
-            <span v-else>{{ getStatusText(row.status) }}</span>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
+
+    <!-- 支付确认弹窗 -->
+    <el-dialog
+      v-model="payDialogVisible"
+      title="确认支付"
+      width="400px"
+    >
+      <div class="pay-dialog-content">
+        <p>订单金额：¥{{ currentOrder?.textbook.price * currentOrder?.quantity }}</p>
+        <p>支付方式：模拟支付</p>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="payDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="confirmPay" :loading="payLoading">
+            确认支付
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, defineComponent } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getOrders, updateOrderStatus } from '@/api'
+import { getOrders, updateOrderStatus, payOrder } from '@/api'
 import type { Order } from '@/types'
 import { useUserStore } from '@/store/user'
 
@@ -86,6 +113,9 @@ defineComponent({
 const orders = ref<Order[]>([])
 const userStore = useUserStore()
 const loading = ref(false)
+const payDialogVisible = ref(false)
+const payLoading = ref(false)
+const currentOrder = ref<Order | null>(null)
 
 const loadOrders = async () => {
   try {
@@ -112,6 +142,8 @@ const loadOrders = async () => {
 
 const getStatusType = (status: string) => {
   const statusMap: Record<string, string> = {
+    'UNPAID': 'warning',
+    'PAID': 'primary',
     'PENDING': 'warning',
     'SHIPPED': 'primary',
     'RECEIVED': 'success',
@@ -123,6 +155,8 @@ const getStatusType = (status: string) => {
 
 const getStatusText = (status: string) => {
   const statusMap: Record<string, string> = {
+    'UNPAID': '待支付',
+    'PAID': '已支付',
     'PENDING': '待处理',
     'SHIPPED': '已发货',
     'RECEIVED': '已收货',
@@ -178,6 +212,33 @@ const handleConfirmReceive = async (order: Order) => {
       console.error('操作失败:', error)
       ElMessage.error('操作失败')
     }
+  }
+}
+
+const handlePay = (order: Order) => {
+  currentOrder.value = order
+  payDialogVisible.value = true
+}
+
+const confirmPay = async () => {
+  if (!currentOrder.value) return
+  
+  try {
+    payLoading.value = true
+    const response = await payOrder(currentOrder.value.id)
+    
+    if (response.data.success) {
+      ElMessage.success('支付成功')
+      payDialogVisible.value = false
+      await loadOrders()
+    } else {
+      ElMessage.error(response.data.message || '支付失败')
+    }
+  } catch (error) {
+    console.error('支付失败:', error)
+    ElMessage.error('支付失败，请重试')
+  } finally {
+    payLoading.value = false
   }
 }
 
@@ -266,6 +327,18 @@ onMounted(() => {
           }
         }
       }
+    }
+  }
+}
+
+.pay-dialog-content {
+  p {
+    margin: 10px 0;
+    font-size: 16px;
+    
+    &:first-child {
+      color: var(--primary-color);
+      font-weight: bold;
     }
   }
 }

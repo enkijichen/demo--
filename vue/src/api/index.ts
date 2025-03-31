@@ -158,9 +158,23 @@ export const updatePassword = (data: {
   })
 }
 
-// 获取待处理订单
-export const getPendingOrders = (username: string) => {
-  return api.get<ApiResponse<Order[]>>('/orders/pending', { params: { username } })
+// 获取所有订单
+export const getAllOrders = (username: string) => {
+  return api.get<ApiResponse<Order[]>>('/orders/all', { params: { username } })
+}
+
+export const payOrder = (orderId: number) => {
+  return api.post<ApiResponse<Order>>(`/orders/${orderId}/pay`)
+}
+
+export const uploadTextbookImage = (id: number, file: File) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return api.post(`/textbooks/${id}/image`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
 }
 
 export default api 

@@ -120,4 +120,51 @@ public class OrderController {
                 .body(ApiResponse.error("更新订单状态失败"));
         }
     }
+
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse<List<Order>>> getAllOrders(@RequestParam String username) {
+        try {
+            log.info("Getting all orders for admin: {}", username);
+            User user = userService.findByUsername(username)
+                .orElseThrow(() -> new BusinessException("用户不存在"));
+            
+            if (user.getRole() != UserRole.ADMIN) {
+                throw new BusinessException("无权限访问");
+            }
+            
+            List<Order> orders = orderService.findAllOrders();
+            
+            // 手动触发加载关联实体
+            orders.forEach(order -> {
+                order.getTextbook().getName(); // 触发 textbook 加载
+                order.getUser().getUsername(); // 触发 user 加载
+            });
+            
+            return ResponseEntity.ok(ApiResponse.success(orders));
+        } catch (BusinessException e) {
+            log.warn("Failed to get orders: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to get orders", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("获取订单列表失败"));
+        }
+    }
+
+    @PostMapping("/{orderId}/pay")
+    public ResponseEntity<ApiResponse<Order>> payOrder(@PathVariable Long orderId) {
+        try {
+            log.info("Processing payment for order: {}", orderId);
+            Order order = orderService.payOrder(orderId);
+            return ResponseEntity.ok(ApiResponse.success(order, "支付成功"));
+        } catch (BusinessException e) {
+            log.warn("Payment failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Payment failed with unexpected error", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("支付失败，请稍后重试"));
+        }
+    }
 } 

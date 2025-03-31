@@ -63,6 +63,19 @@
         >
           <el-card class="textbook-card" :body-style="{ padding: '20px' }">
             <div class="book-info">
+              <div class="book-image" @click="handlePreviewImage(book)">
+                <el-image
+                  :src="book.imageUrl || '/images/textbooks/default.png'"
+                  fit="cover"
+                  :preview-src-list="book.imageUrl ? [book.imageUrl] : []"
+                >
+                  <template #error>
+                    <div class="image-placeholder">
+                      <el-icon><Picture /></el-icon>
+                    </div>
+                  </template>
+                </el-image>
+              </div>
               <h3>{{ book.name }}</h3>
               <p>年级：{{ book.grade }}</p>
               <p>科目：{{ book.subject }}</p>
@@ -137,6 +150,7 @@ import type { Textbook, TextbookWithQuantity } from '@/types'
 import { useUserStore } from '@/store/user'
 import type { FormInstance } from 'element-plus'
 import { useRouter } from 'vue-router'
+import { Picture } from '@element-plus/icons-vue'
 
 const textbooks = ref<TextbookWithQuantity[]>([])
 const filters = ref({
@@ -293,6 +307,10 @@ const submitOrder = async () => {
   }
 }
 
+const handlePreviewImage = (book: TextbookWithQuantity) => {
+  // Implementation of handlePreviewImage function
+}
+
 onMounted(async () => {
   console.log('Component mounted')
   await nextTick()
@@ -339,6 +357,31 @@ onMounted(async () => {
     }
 
     .book-info {
+      .book-image {
+        width: 100%;
+        height: 200px;
+        margin-bottom: 15px;
+        cursor: pointer;
+        border-radius: 4px;
+        overflow: hidden;
+        background-color: var(--dark-bg);
+
+        .el-image {
+          width: 100%;
+          height: 100%;
+          
+          .image-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-gray);
+            font-size: 24px;
+          }
+        }
+      }
+
       h3 {
         margin: 0 0 15px;
         font-size: 18px;

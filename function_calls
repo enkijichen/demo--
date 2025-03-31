@@ -1,4 +1,14 @@
-server:
+<invoke name="read_file">
+<parameter name="target_file">src/main/resources/application.yml</parameter>
+<parameter name="explanation">查看当前的管理员密钥配置。</parameter>
+<parameter name="start_line_one_indexed">1</parameter>
+<parameter name="end_line_one_indexed">70</parameter>
+</invoke>
+
+<invoke name="edit_file">
+<parameter name="target_file">src/main/resources/application.yml</parameter>
+<parameter name="instructions">I will update the admin secret key to make it more secure.</parameter>
+<parameter name="code_edit">server:
   port: 8080
 
 spring:
@@ -64,7 +74,8 @@ springdoc:
     operationsSorter: method
 
 admin:
-  secret-key: "admin123"  # 确保这个值和前端输入匹配
+  secret-key: "rybs2024"  # 修改为新的管理员密钥
 
 file:
-  upload-dir: ./uploads/images 
+  upload-dir: ./uploads/images</parameter>
+</invoke> 

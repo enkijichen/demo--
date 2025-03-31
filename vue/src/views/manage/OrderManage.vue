@@ -9,11 +9,24 @@
 
       <el-table :data="orders" stripe style="width: 100%">
         <el-table-column prop="id" label="订单编号" width="100" />
-        <el-table-column label="用户信息" min-width="150">
+        <el-table-column label="用户信息" width="150">
           <template #default="{ row }">
-            <div class="user-info">
-              <p>{{ row.user.username }}</p>
-              <p class="sub-info">{{ row.user.phone }}</p>
+            {{ row.user.username }}
+          </template>
+        </el-table-column>
+        <el-table-column label="收货信息" min-width="200">
+          <template #default="{ row }">
+            <div class="delivery-info">
+              <p class="receiver">{{ row.receiver }}</p>
+              <p class="phone">{{ row.phone }}</p>
+              <el-tooltip
+                effect="dark"
+                :content="row.address"
+                placement="top"
+                :show-after="500"
+              >
+                <p class="address">{{ row.address }}</p>
+              </el-tooltip>
             </div>
           </template>
         </el-table-column>
@@ -31,15 +44,6 @@
             ¥{{ (row.textbook.price * row.quantity).toFixed(2) }}
           </template>
         </el-table-column>
-        <el-table-column label="收货信息" min-width="200">
-          <template #default="{ row }">
-            <div class="delivery-info">
-              <p>{{ row.receiver }}</p>
-              <p>{{ row.phone }}</p>
-              <p class="address">{{ row.address }}</p>
-            </div>
-          </template>
-        </el-table-column>
         <el-table-column prop="status" label="状态" width="120" align="center">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)">
@@ -49,23 +53,30 @@
         </el-table-column>
         <el-table-column label="操作" width="200" align="center">
           <template #default="{ row }">
-            <el-button-group v-if="row.status === 'PENDING'">
-              <el-button
-                type="primary"
-                size="small"
-                @click="handleApprove(row)"
-              >
-                发货
-              </el-button>
-              <el-button
-                type="danger"
-                size="small"
-                @click="handleReject(row)"
-              >
-                拒绝
-              </el-button>
-            </el-button-group>
-            <span v-else>{{ getStatusText(row.status) }}</span>
+            <el-button
+              v-if="row.status === 'PAID'"
+              type="primary"
+              size="small"
+              @click="handleProcess(row)"
+            >
+              开始处理
+            </el-button>
+            <el-button
+              v-if="row.status === 'PENDING'"
+              type="success"
+              size="small"
+              @click="handleShip(row)"
+            >
+              发货
+            </el-button>
+            <el-button
+              v-if="row.status === 'PENDING'"
+              type="danger"
+              size="small"
+              @click="handleReject(row)"
+            >
+              拒绝
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -76,7 +87,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getPendingOrders, updateOrderStatus } from '@/api'
+import { getAllOrders, updateOrderStatus } from '@/api'
 import type { Order } from '@/types'
 import { useUserStore } from '@/store/user'
 
@@ -92,7 +103,7 @@ const loadOrders = async () => {
     }
     
     loading.value = true
-    const response = await getPendingOrders(userStore.user.username)
+    const response = await getAllOrders(userStore.user.username)
     
     if (response.data.success) {
       orders.value = response.data.data
@@ -109,17 +120,21 @@ const loadOrders = async () => {
 
 const getStatusType = (status: string) => {
   const statusMap: Record<string, string> = {
-    'PENDING': 'warning',
-    'SHIPPED': 'primary',
-    'RECEIVED': 'success',
-    'REJECTED': 'danger',
-    'CANCELLED': 'info'
+    '待支付': 'warning',
+    '已支付': 'primary',
+    '待处理': 'warning',
+    '已发货': 'primary',
+    '已收货': 'success',
+    '已拒绝': 'danger',
+    '已撤回': 'info'
   }
-  return statusMap[status] || 'info'
+  return statusMap[getStatusText(status)] || 'info'
 }
 
 const getStatusText = (status: string) => {
   const statusMap: Record<string, string> = {
+    'UNPAID': '待支付',
+    'PAID': '已支付',
     'PENDING': '待处理',
     'SHIPPED': '已发货',
     'RECEIVED': '已收货',
@@ -129,9 +144,31 @@ const getStatusText = (status: string) => {
   return statusMap[status] || status
 }
 
-const handleApprove = async (order: Order) => {
+const handleProcess = async (order: Order) => {
   try {
-    await ElMessageBox.confirm('确定要发货吗？', '确认操作', {
+    await ElMessageBox.confirm('确定开始处理该订单吗？', '确认操作', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+
+    const response = await updateOrderStatus(order.id, 'PENDING')
+    if (response.data.success) {
+      ElMessage.success('订单已开始处理')
+      await loadOrders()
+    } else {
+      ElMessage.error(response.data.message || '操作失败')
+    }
+  } catch (error: any) {
+    if (error === 'cancel') return
+    console.error('操作失败:', error)
+    ElMessage.error(error.response?.data?.message || '操作失败')
+  }
+}
+
+const handleShip = async (order: Order) => {
+  try {
+    await ElMessageBox.confirm('确定发货吗？', '确认操作', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
@@ -145,22 +182,21 @@ const handleApprove = async (order: Order) => {
       ElMessage.error(response.data.message || '操作失败')
     }
   } catch (error: any) {
-    if (error === 'cancel') {
-      return
-    }
+    if (error === 'cancel') return
     console.error('操作失败:', error)
-    ElMessage.error(error.response?.data?.message || '操作失败，请稍后重试')
+    ElMessage.error(error.response?.data?.message || '操作失败')
   }
 }
 
 const handleReject = async (order: Order) => {
   try {
-    await ElMessageBox.confirm('确定要拒绝该订单吗？', '确认操作', {
+    await ElMessageBox.confirm('确定拒绝该订单吗？', {
+      title: '确认操作',
+      type: 'warning',
       confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
+      cancelButtonText: '取消'
     })
-
+    
     const response = await updateOrderStatus(order.id, 'REJECTED')
     if (response.data.success) {
       ElMessage.success('订单已拒绝')
@@ -168,12 +204,11 @@ const handleReject = async (order: Order) => {
     } else {
       ElMessage.error(response.data.message || '操作失败')
     }
-  } catch (error: any) {
-    if (error === 'cancel') {
-      return
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('Failed to reject order:', error)
+      ElMessage.error('操作失败')
     }
-    console.error('操作失败:', error)
-    ElMessage.error(error.response?.data?.message || '操作失败，请稍后重试')
   }
 }
 

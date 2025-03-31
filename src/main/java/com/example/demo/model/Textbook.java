@@ -31,4 +31,6 @@ public class Textbook {
     @NotNull(message = "库存不能为空")
     @Min(value = 0, message = "库存必须大于等于0")
     private Integer stock;
+
+    private String imageUrl;
 } 
